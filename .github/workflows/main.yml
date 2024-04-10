@@ -5,6 +5,12 @@ on:
     branches:
       - dev
 
+env:
+  GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+  #TF_ACTION_WORKING_DIR: 'k8s-gatekeeper'
+  AWS_ACCESS_KEY_ID:  ${{ secrets.AWS_ACCESS_KEY_ID }}
+  AWS_SECRET_ACCESS_KEY:  ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+
 jobs:
   build:
     runs-on: ubuntu-latest
