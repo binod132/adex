@@ -1,0 +1,57 @@
+name: CI/CD Pipeline
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v2
+
+      - name: Build Docker image
+        run: docker build -t my-node-app .
+
+      - name: Docker image scan
+        uses: aquasecurity/trivy-action@v2
+        with:
+          image-ref: my-node-app
+
+      - name: Push Docker image to GitHub Container Registry
+        uses: docker/build-push-action@v2
+        with:
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+          repository: ${{ github.repository }}
+
+  deploy_dev:
+    needs: build
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Deploy to ECS (Dev)
+        uses: appleboy/ssh-action@master
+        with:
+          host: ${{ secrets.ECS_DEV_HOST }}
+          username: ${{ secrets.ECS_DEV_USERNAME }}
+          key: ${{ secrets.ECS_DEV_SSH_KEY }}
+          script: |
+            ssh -o StrictHostKeyChecking=no ${{ secrets.ECS_DEV_USERNAME }}@${{ secrets.ECS_DEV_HOST }} 'docker-compose -f docker-compose.dev.yml pull && docker-compose -f docker-compose.dev.yml up -d'
+
+  deploy_prod:
+    needs: build
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Deploy to ECS (Prod)
+        uses: appleboy/ssh-action@master
+        with:
+          host: ${{ secrets.ECS_PROD_HOST }}
+          username: ${{ secrets.ECS_PROD_USERNAME }}
+          key: ${{ secrets.ECS_PROD_SSH_KEY }}
+          script: |
+            ssh -o StrictHostKeyChecking=no ${{ secrets.ECS_PROD_USERNAME }}@${{ secrets.ECS_PROD_HOST }} 'docker-compose -f docker-compose.prod.yml pull && docker-compose -f docker-compose.prod.yml up -d'
