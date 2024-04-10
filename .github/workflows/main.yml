@@ -11,13 +11,13 @@ jobs:
 
     steps:
       - name: Checkout code
-        uses: actions/checkout@v1
+        uses: actions/checkout@v2
 
       - name: Build Docker image
         run: docker build -t my-node-app .
 
       - name: Docker image scan
-        uses: aquasecurity/trivy-action@v2
+        uses: aquasecurity/trivy-action@v1
         with:
           image-ref: my-node-app
 
