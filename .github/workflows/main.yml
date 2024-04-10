@@ -32,7 +32,7 @@ jobs:
       - name: Docker image scan
         uses: aquasecurity/trivy-action@master
         with:
-          image-ref: my-node-app
+          image-ref: adex-todo
 
       # Push Docker image to Amazon ECR Public
       - name: Push Docker image
