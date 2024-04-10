@@ -3,7 +3,7 @@
     "containerDefinitions": [
         {
             "name": "todo",
-            "image": "public.ecr.aws/y6k5k4h5/adex-todo:dev",
+            "image": "232048837608.dkr.ecr.us-east-1.amazonaws.com/adex-todo",
             "cpu": 0,
             "portMappings": [
                 {
