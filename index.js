@@ -1,48 +1,53 @@
-//dependencies required for the app
 var express = require("express");
 var bodyParser = require("body-parser");
 var app = express();
+const pool = require('./db'); // Import the PostgreSQL connection
 
 app.use(bodyParser.urlencoded({ extended: true }));
 app.set("view engine", "ejs");
-//render css files
 app.use(express.static("public"));
 
-//placeholders for added task
-var task = ["buy socks", "practise with nodejs"];
-//placeholders for removed task
-var complete = ["finish jquery"];
-
-//post route for adding new task 
-app.post("/addtask", function(req, res) {
+// POST route for adding new task
+app.post("/addtask", async function(req, res) {
     var newTask = req.body.newtask;
-    //add the new task from the post route
-    task.push(newTask);
-    res.redirect("/");
-});
-
-app.post("/removetask", function(req, res) {
-    var completeTask = req.body.check;
-    //check for the "typeof" the different completed task, then add into the complete task
-    if (typeof completeTask === "string") {
-        complete.push(completeTask);
-        //check if the completed task already exits in the task when checked, then remove it
-        task.splice(task.indexOf(completeTask), 1);
-    } else if (typeof completeTask === "object") {
-        for (var i = 0; i < completeTask.length; i++) {
-            complete.push(completeTask[i]);
-            task.splice(task.indexOf(completeTask[i]), 1);
-        }
+    try {
+        await pool.query('INSERT INTO tasks (title, is_completed) VALUES ($1, $2)', [newTask, false]);
+    } catch (err) {
+        console.error('Error adding task:', err);
     }
     res.redirect("/");
 });
 
-//render the ejs and display added task, completed task
-app.get("/", function(req, res) {
-    res.render("index", { task: task, complete: complete });
+// POST route for removing tasks
+app.post("/removetask", async function(req, res) {
+    var completeTask = req.body.check;
+    try {
+        if (typeof completeTask === "string") {
+            await pool.query('UPDATE tasks SET is_completed = true WHERE id = $1', [completeTask]);
+        } else if (typeof completeTask === "object") {
+            for (var i = 0; i < completeTask.length; i++) {
+                await pool.query('UPDATE tasks SET is_completed = true WHERE id = $1', [completeTask[i]]);
+            }
+        }
+    } catch (err) {
+        console.error('Error removing task:', err);
+    }
+    res.redirect("/");
 });
 
-//set app to listen on port 3000
+// Render the ejs and display tasks
+app.get("/", async function(req, res) {
+    try {
+        const tasksResult = await pool.query('SELECT * FROM tasks WHERE is_completed = false');
+        const completedResult = await pool.query('SELECT * FROM tasks WHERE is_completed = true');
+        res.render("index", { task: tasksResult.rows, complete: completedResult.rows });
+    } catch (err) {
+        console.error('Error fetching tasks:', err);
+        res.status(500).send('Server error');
+    }
+});
+
+// Set app to listen on port 3000
 app.listen(3000, function() {
-    console.log("server is running on port 3000");
+    console.log("Server is running on port 3000");
 });
